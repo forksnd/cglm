@@ -82,9 +82,11 @@ glm_ray_triangle(vec3   origin,
 /*!
  * @brief ray sphere intersection
  *
+ * returns false if there is no intersection if true:
+ *
  * - t1 > 0, t2 > 0: ray intersects the sphere at t1 and t2 both ahead of the origin
  * - t1 < 0, t2 > 0: ray starts inside the sphere, exits at t2
- * - t1 < 0, t2 < 0: no intersection ahead of the ray
+ * - t1 < 0, t2 < 0: no intersection ahead of the ray ( returns false )
  * - the caller can check if the intersection points (t1 and t2) fall within a
  *   specific range (for example, tmin < t1, t2 < tmax) to determine if the
  *   intersections are within a desired segment of the ray
@@ -94,6 +96,8 @@ glm_ray_triangle(vec3   origin,
  * @param[in]  s      sphere  [center.x, center.y, center.z, radii]
  * @param[in]  t1     near point1 (closer to origin)
  * @param[in]  t2     far point2 (farther from origin)
+ *
+ * @returns whether there is intersection
  */
 CGLM_INLINE
 bool 
@@ -105,7 +109,6 @@ glm_ray_sphere(vec3 origin,
   vec3  dp;
   float r2, ddp, dpp, dscr, q, tmp, _t1, _t2;
 
-  /* ensure dir is normalized */
   glm_vec3_sub(s, origin, dp);
 
   ddp = glm_vec3_dot(dir, dp);

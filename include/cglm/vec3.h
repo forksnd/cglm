@@ -80,9 +80,9 @@
    CGLM_INLINE void  glm_vec3_smoothinterpc(vec3 from, vec3 to, float t, vec3 dest);
    CGLM_INLINE void  glm_vec3_swizzle(vec3 v, int mask, vec3 dest);
    CGLM_INLINE void  glm_vec3_make(float * restrict src, vec3 dest);
-   CGLM_INLINE void  glm_vec3_faceforward(vec3 N, vec3 I, vec3 Nref, vec3 dest);
-   CGLM_INLINE void  glm_vec3_reflect(vec3 I, vec3 N, vec3 dest);
-   CGLM_INLINE void  glm_vec3_refract(vec3 I, vec3 N, float eta, vec3 dest);
+   CGLM_INLINE void  glm_vec3_faceforward(vec3 n, vec3 v, vec3 nref, vec3 dest);
+   CGLM_INLINE void  glm_vec3_reflect(vec3 v, vec3 n, vec3 dest);
+   CGLM_INLINE void  glm_vec3_refract(vec3 v, vec3 n, float eta, vec3 dest);
 
  Convenient:
    CGLM_INLINE void  glm_cross(vec3 a, vec3 b, vec3 d);
@@ -372,7 +372,7 @@ glm_vec3_scale_as(vec3 v, float s, vec3 dest) {
   float norm;
   norm = glm_vec3_norm(v);
 
-  if (norm == 0.0f) {
+  if (CGLM_UNLIKELY(norm < FLT_EPSILON)) {
     glm_vec3_zero(dest);
     return;
   }
@@ -651,7 +651,7 @@ glm_vec3_normalize(vec3 v) {
 
   norm = glm_vec3_norm(v);
 
-  if (norm == 0.0f) {
+  if (CGLM_UNLIKELY(norm < FLT_EPSILON)) {
     v[0] = v[1] = v[2] = 0.0f;
     return;
   }
@@ -672,7 +672,7 @@ glm_vec3_normalize_to(vec3 v, vec3 dest) {
 
   norm = glm_vec3_norm(v);
 
-  if (norm == 0.0f) {
+  if (CGLM_UNLIKELY(norm < FLT_EPSILON)) {
     glm_vec3_zero(dest);
     return;
   }
@@ -1210,65 +1210,69 @@ glm_vec3_make(const float * __restrict src, vec3 dest) {
  *
  * orients a vector to point away from a surface as defined by its normal
  *
- * @param[in] N      vector to orient
- * @param[in] I      incident vector
- * @param[in] Nref   reference vector
+ * @param[in] n      vector to orient
+ * @param[in] v      incident vector
+ * @param[in] nref   reference vector
  * @param[out] dest  oriented vector, pointing away from the surface
  */
 CGLM_INLINE
 void
-glm_vec3_faceforward(vec3 N, vec3 I, vec3 Nref, vec3 dest) {
-  if (glm_vec3_dot(I, Nref) < 0.0f) {
+glm_vec3_faceforward(vec3 n, vec3 v, vec3 nref, vec3 dest) {
+  if (glm_vec3_dot(v, nref) < 0.0f) {
     /* N is facing away from I */
-    glm_vec3_copy(N, dest);
+    glm_vec3_copy(n, dest);
   } else {
     /* N is facing towards I, negate it */
-    glm_vec3_negate_to(N, dest);
+    glm_vec3_negate_to(n, dest);
   }
 }
 
 /*!
  * @brief reflection vector using an incident ray and a surface normal
  *
- * @param[in]  I    incident vector
- * @param[in]  N    normalized normal vector
+ * @param[in]  v    incident vector
+ * @param[in]  n    normalized normal vector
  * @param[out] dest reflection result
  */
 CGLM_INLINE
 void
-glm_vec3_reflect(vec3 I, vec3 N, vec3 dest) {
+glm_vec3_reflect(vec3 v, vec3 n, vec3 dest) {
   vec3 temp;
-  glm_vec3_scale(N, 2.0f * glm_vec3_dot(I, N), temp);
-  glm_vec3_sub(I, temp, dest);
+  glm_vec3_scale(n, 2.0f * glm_vec3_dot(v, n), temp);
+  glm_vec3_sub(v, temp, dest);
 }
 
 /*!
- * @brief refraction vector using entering ray, surface normal and refraction index
+ * @brief computes refraction vector for an incident vector and a surface normal.
  *
- * if the angle between the entering ray I and the surface normal N is too great
- * for a given refraction index, the return value is zero
+ * calculates the refraction vector based on Snell's law. If total internal reflection
+ * occurs (angle too great given eta), dest is set to zero and returns false.
+ * Otherwise, computes refraction vector, stores it in dest, and returns true.
  *
- * @param[in]  I    normalized incident vector
- * @param[in]  N    normalized normal vector
- * @param[in]  eta  ratio of indices of refraction
- * @param[out] dest refraction result
+ * @param[in]  v    normalized incident vector
+ * @param[in]  n    normalized normal vector
+ * @param[in]  eta  ratio of indices of refraction (incident/transmitted)
+ * @param[out] dest refraction vector if refraction occurs; zero vector otherwise
+ *
+ * @returns true if refraction occurs; false if total internal reflection occurs.
  */
 CGLM_INLINE
-void
-glm_vec3_refract(vec3 I, vec3 N, float eta, vec3 dest) {
+bool
+glm_vec3_refract(vec3 v, vec3 n, float eta, vec3 dest) {
   float ndi, eni, k;
 
-  ndi = glm_vec3_dot(N, I);
+  ndi = glm_vec3_dot(n, v);
   eni = eta * ndi;
   k   = 1.0f + eta * eta - eni * eni;
 
   if (k < 0.0f) {
     glm_vec3_zero(dest);
-    return;
+    return false;
   }
 
-  glm_vec3_scale(I, eta, dest);
-  glm_vec3_mulsubs(N, eni + sqrtf(k), dest);
+  glm_vec3_scale(v, eta, dest);
+  glm_vec3_mulsubs(n, eni + sqrtf(k), dest);
+  return true;
 }
 
 #endif /* cglm_vec3_h */

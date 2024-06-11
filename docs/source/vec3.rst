@@ -516,34 +516,39 @@ Functions documentation
       | *[in]*  **src**  pointer to an array of floats
       | *[out]* **dest** destination vector
 
-.. c:function:: void glm_vec3_faceforward(vec3 N, vec3 I, vec3 Nref, vec3 dest)
+.. c:function:: void glm_vec3_faceforward(vec3 n, vec3 v, vec3 nref, vec3 dest)
 
     A vector pointing in the same direction as another
 
     Parameters:
-      | *[in]*  **N**     vector to orient
-      | *[in]*  **I**     incident vector
-      | *[in]*  **Nref**  reference vector
+      | *[in]*  **n**     vector to orient
+      | *[in]*  **v**     incident vector
+      | *[in]*  **nref**  reference vector
       | *[out]* **dest**  destination: oriented vector, pointing away from the surface.
 
-.. c:function:: void glm_vec3_reflect(vec3 I, vec3 N, vec3 dest) 
+.. c:function:: void glm_vec3_reflect(vec3 v, vec3 n, vec3 dest)
 
     Reflection vector using an incident ray and a surface normal
 
     Parameters:
-      | *[in]*  **I**     incident vector
-      | *[in]*  **N**     *❗️ normalized ❗️* normal vector
+      | *[in]*  **v**     incident vector
+      | *[in]*  **n**     *❗️ normalized ❗️* normal vector
       | *[out]* **dest**  destination: reflection result
 
-.. c:function:: void glm_vec3_refract(vec3 I, vec3 N, float eta, vec3 dest)
+.. c:function:: bool glm_vec3_refract(vec3 v, vec3 n, float eta, vec3 dest)
 
-    Refraction vector using entering ray, surface normal and refraction index
-
-    If the angle between the entering ray I and the surface normal N is too 
-    great for a given refraction index, the return value is zero
+    
+    Computes refraction vector for an incident vector and a surface normal.
+   
+    Calculates the refraction vector based on Snell's law. If total internal reflection
+    occurs (angle too great given eta), dest is set to zero and returns false.
+    Otherwise, computes refraction vector, stores it in dest, and returns true.
 
     Parameters:
-      | *[in]*  **I**     *❗️ normalized ❗️* incident vector
-      | *[in]*  **N**     *❗️ normalized ❗️* normal vector
-      | *[in]*  **eta**   ratio of indices of refraction ( η )
-      | *[out]* **dest**  destination: refraction result
+      | *[in]*  **v**     *❗️ normalized ❗️* incident vector
+      | *[in]*  **n**     *❗️ normalized ❗️* normal vector
+      | *[in]*  **eta**   ratio of indices of refraction (incident/transmitted)
+      | *[out]* **dest**  refraction vector if refraction occurs; zero vector otherwise
+
+    Returns:
+      returns true if refraction occurs; false if total internal reflection occurs.
