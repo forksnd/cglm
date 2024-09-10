@@ -164,7 +164,7 @@ glm_vec3_min(vec3 v) {
 }
 
 /*!
- * @brief check if all items are NaN (not a number)
+ * @brief check if one of items is NaN (not a number)
  *        you should only use this in DEBUG mode or very critical asserts
  *
  * @param[in] v vector
@@ -172,11 +172,15 @@ glm_vec3_min(vec3 v) {
 CGLM_INLINE
 bool
 glm_vec3_isnan(vec3 v) {
+#ifndef CGLM_FAST_MATH
   return isnan(v[0]) || isnan(v[1]) || isnan(v[2]);
+#else
+  return false;
+#endif
 }
 
 /*!
- * @brief check if all items are INFINITY
+ * @brief check if one of items is INFINITY
  *        you should only use this in DEBUG mode or very critical asserts
  *
  * @param[in] v vector
@@ -184,7 +188,11 @@ glm_vec3_isnan(vec3 v) {
 CGLM_INLINE
 bool
 glm_vec3_isinf(vec3 v) {
+#ifndef CGLM_FAST_MATH
   return isinf(v[0]) || isinf(v[1]) || isinf(v[2]);
+#else
+  return false;
+#endif
 }
 
 /*!
